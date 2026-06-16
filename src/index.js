@@ -25,7 +25,7 @@ function loadDb() {
  * @param {number} year  - Gregorian year (e.g. 2026)
  * @param {number} month - Month 1–12
  * @param {number} day   - Day 1–31
- * @returns {{ date, tithi, nakshatra, bengaliMonth, bengaliYear }}
+ * @returns {{ date, tithi, nakshatra, bengaliMonth, bengaliYear, bengaliDay }}
  */
 export function findTithiForDate(year, month, day) {
   const db = loadDb();

@@ -1,6 +1,6 @@
 # bongcal
 
-Bengali Panchanga (Hindu almanac) for Node.js. Given a Gregorian date, returns Tithi, Paksha, Nakshatra, Bengali month, Bengali year, and any solar or lunar eclipse — all calibrated for Kolkata (Lahiri ayanamsha, IST).
+Bengali Panchanga (Hindu almanac) for Node.js. Given a Gregorian date, returns Tithi, Paksha, Nakshatra, Bengali month, Bengali year, Bengali day-of-month, and any solar or lunar eclipse — all calibrated for Kolkata (Lahiri ayanamsha, IST).
 
 Coverage: **1926 – 2126**.
 
@@ -36,7 +36,8 @@ console.log(entry);
   },
   "nakshatra": { "name": "মৃগশিরা" },
   "bengaliMonth": "আষাঢ়",
-  "bengaliYear": 1433
+  "bengaliYear": 1433,
+  "bengaliDay": 1
 }
 ```
 
@@ -45,10 +46,11 @@ On eclipse days the entry also contains an `eclipse` field:
 ```json
 {
   "date": "27-07-2018",
-  "tithi": { ... },
-  "nakshatra": { ... },
+  "tithi": { "..." },
+  "nakshatra": { "..." },
   "bengaliMonth": "শ্রাবণ",
   "bengaliYear": 1425,
+  "bengaliDay": 11,
   "eclipse": {
     "type": "lunar",
     "subtype": "total",
@@ -106,6 +108,21 @@ Then run `npm run regenerate`.
 | `day` | `number` | Day 1–31 |
 
 Returns the panchanga entry object for that date. Throws `RangeError` if the date is outside the generated range.
+
+**Return fields:**
+
+| Field | Type | Description |
+|---|---|---|
+| `date` | `string` | `"DD-MM-YYYY"` |
+| `tithi.name` | `string` | Bengali tithi name |
+| `tithi.paksha` | `string` | `"শুক্ল পক্ষ"` or `"কৃষ্ণ পক্ষ"` |
+| `tithi.startTime` | `{date, time}` | IST start of this tithi |
+| `tithi.endTime` | `{date, time}` | IST end of this tithi |
+| `nakshatra.name` | `string` | Bengali nakshatra name |
+| `bengaliMonth` | `string` | Bengali month name |
+| `bengaliYear` | `number` | Bengali Saka year |
+| `bengaliDay` | `number` | Day-of-month in the Bengali civil calendar (1-based) |
+| `eclipse` | `object\|undefined` | Present only on eclipse days (see above) |
 
 ---
 

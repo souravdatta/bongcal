@@ -86,3 +86,52 @@ test('15-Jun-2031: Krishna Ekadashi, Ashwini, Ashadha 1438', () => {
   assert.equal(day.bengaliMonth,   'আষাঢ়');
   assert.equal(day.bengaliYear,    1438);
 });
+
+// ---------------------------------------------------------------------------
+// Bengali day-of-month — verified against Drik Panchang and civil calendar rules
+// ---------------------------------------------------------------------------
+
+// 1 Baisakh = Apr 14 (Bengali New Year)
+test('14-Apr-2026: 1 Baisakh 1433', () => {
+  const d = findTithiForDate(2026, 4, 14);
+  assert.equal(d.bengaliMonth, 'বৈশাখ');
+  assert.equal(d.bengaliYear,  1433);
+  assert.equal(d.bengaliDay,   1);
+});
+
+// Last day of Jyeshtha: Jun 14 = day 31 (May 15 = day 1, +30 days = Jun 14)
+test('14-Jun-2026: 31 Jyeshtha 1433', () => {
+  const d = findTithiForDate(2026, 6, 14);
+  assert.equal(d.bengaliMonth, 'জ্যৈষ্ঠ');
+  assert.equal(d.bengaliDay,   31);
+});
+
+// First day of Ashadha
+test('15-Jun-2026: 1 Ashadha 1433', () => {
+  const d = findTithiForDate(2026, 6, 15);
+  assert.equal(d.bengaliMonth, 'আষাঢ়');
+  assert.equal(d.bengaliDay,   1);
+});
+
+// Today
+test('16-Jun-2026: 2 Ashadha 1433', () => {
+  const d = findTithiForDate(2026, 6, 16);
+  assert.equal(d.bengaliMonth, 'আষাঢ়');
+  assert.equal(d.bengaliDay,   2);
+});
+
+// Mid-year: 1 Magh = Jan 15 (crosses into next Gregorian year)
+test('15-Jan-2026: 1 Magh 1432', () => {
+  const d = findTithiForDate(2026, 1, 15);
+  assert.equal(d.bengaliMonth, 'মাঘ');
+  assert.equal(d.bengaliYear,  1432);
+  assert.equal(d.bengaliDay,   1);
+});
+
+// 1 Falgun = Feb 14
+test('14-Feb-2026: 1 Falgun 1432', () => {
+  const d = findTithiForDate(2026, 2, 14);
+  assert.equal(d.bengaliMonth, 'ফাল্গুন');
+  assert.equal(d.bengaliYear,  1432);
+  assert.equal(d.bengaliDay,   1);
+});

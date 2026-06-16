@@ -114,27 +114,59 @@ function getNakshatra(jd) {
 
 function getBengaliMonthCivilKolkata(year, month, day) {
   const d = new Date(year, month - 1, day).getTime();
-  const B = (y, m, day) => new Date(y, m - 1, day).getTime();
+  const base = (month > 4 || (month === 4 && day >= 14)) ? year : year - 1;
+  const B = (y, m, d) => new Date(y, m - 1, d).getTime();
   const boundaries = [
-    [B(year, 4, 14),     'বৈশাখ'],
-    [B(year, 5, 15),     'জ্যৈষ্ঠ'],
-    [B(year, 6, 15),     'আষাঢ়'],
-    [B(year, 7, 16),     'শ্রাবণ'],
-    [B(year, 8, 17),     'ভাদ্র'],
-    [B(year, 9, 17),     'আশ্বিন'],
-    [B(year, 10, 18),    'কার্তিক'],
-    [B(year, 11, 17),    'অগ্রহায়ণ'],
-    [B(year, 12, 16),    'পৌষ'],
-    [B(year + 1, 1, 15), 'মাঘ'],
-    [B(year + 1, 2, 14), 'ফাল্গুন'],
-    [B(year + 1, 3, 15), 'চৈত্র'],
+    [B(base,     4, 14), 'বৈশাখ'],
+    [B(base,     5, 15), 'জ্যৈষ্ঠ'],
+    [B(base,     6, 15), 'আষাঢ়'],
+    [B(base,     7, 16), 'শ্রাবণ'],
+    [B(base,     8, 17), 'ভাদ্র'],
+    [B(base,     9, 17), 'আশ্বিন'],
+    [B(base,    10, 18), 'কার্তিক'],
+    [B(base,    11, 17), 'অগ্রহায়ণ'],
+    [B(base,    12, 16), 'পৌষ'],
+    [B(base + 1, 1, 15), 'মাঘ'],
+    [B(base + 1, 2, 14), 'ফাল্গুন'],
+    [B(base + 1, 3, 15), 'চৈত্র'],
+    [B(base + 1, 4, 14), null],  // sentinel: next Baisakh
   ];
   for (let i = 0; i < boundaries.length - 1; i++) {
     const [start, name] = boundaries[i];
     const [next] = boundaries[i + 1];
     if (d >= start && d < next) return name;
   }
-  return 'চৈত্র';
+  return null;
+}
+
+const DAY_MS = 86400000;
+
+// Returns the Bengali calendar day-of-month (1-based) for a Gregorian date.
+function getBengaliDay(year, month, day) {
+  const d = new Date(year, month - 1, day).getTime();
+  // base = Gregorian year in which Baisakh (Apr 14) of this Bengali year falls
+  const base = (month > 4 || (month === 4 && day >= 14)) ? year : year - 1;
+  const starts = [
+    new Date(base,     3, 14).getTime(),  // বৈশাখ   Apr 14
+    new Date(base,     4, 15).getTime(),  // জ্যৈষ্ঠ  May 15
+    new Date(base,     5, 15).getTime(),  // আষাঢ়    Jun 15
+    new Date(base,     6, 16).getTime(),  // শ্রাবণ   Jul 16
+    new Date(base,     7, 17).getTime(),  // ভাদ্র    Aug 17
+    new Date(base,     8, 17).getTime(),  // আশ্বিন   Sep 17
+    new Date(base,     9, 18).getTime(),  // কার্তিক  Oct 18
+    new Date(base,    10, 17).getTime(),  // অগ্রহায়ণ Nov 17
+    new Date(base,    11, 16).getTime(),  // পৌষ     Dec 16
+    new Date(base + 1, 0, 15).getTime(),  // মাঘ     Jan 15
+    new Date(base + 1, 1, 14).getTime(),  // ফাল্গুন  Feb 14
+    new Date(base + 1, 2, 15).getTime(),  // চৈত্র    Mar 15
+    new Date(base + 1, 3, 14).getTime(),  // next বৈশাখ
+  ];
+  for (let i = 0; i < 12; i++) {
+    if (d >= starts[i] && d < starts[i + 1]) {
+      return Math.floor((d - starts[i]) / DAY_MS) + 1;
+    }
+  }
+  return null;
 }
 
 function jdToDateTime(jd) {
@@ -216,7 +248,8 @@ export function calculatePanchanga(year, month, day) {
   const { tithiNum, tithiName, paksha } = getTithiInfo(jd);
   const nakshatra = getNakshatra(jd);
   const bengaliMonth = getBengaliMonthCivilKolkata(year, month, day);
-  const bengaliYear = getBengaliYear(year, month, day);
+  const bengaliYear  = getBengaliYear(year, month, day);
+  const bengaliDay   = getBengaliDay(year, month, day);
 
   const start = jdToDateTime(findTithiStart(jd, tithiNum));
   const end = jdToDateTime(findTithiTransition(jd, tithiNum));
@@ -234,6 +267,7 @@ export function calculatePanchanga(year, month, day) {
       nakshatra: { name: nakshatra },
       bengaliMonth,
       bengaliYear,
+      bengaliDay,
     },
   };
 }
