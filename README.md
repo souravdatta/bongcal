@@ -1,102 +1,118 @@
 # bongcal
 
-Bengali Panchanga (Hindu almanac) calculator. Computes Tithi, Nakshatra, Paksha, Bengali month, and Bengali year for any Gregorian date, calibrated for Kolkata (Lahiri ayanamsha, sidereal).
+Bengali Panchanga (Hindu almanac) for Node.js. Given a Gregorian date, returns Tithi, Paksha, Nakshatra, Bengali month, Bengali year, and any solar or lunar eclipse — all calibrated for Kolkata (Lahiri ayanamsha, IST).
 
-## Prerequisites
+Coverage: **1926 – 2126**.
 
-### Node.js
-
-Node.js 18 or later.
-
-### Native build tools (for `swisseph`)
-
-`swisseph` compiles a native C addon. Install the Visual C++ build tools first.
-
-**Option A — windows-build-tools (automated):**
-```powershell
-npm install --global --production windows-build-tools
-```
-
-**Option B — manual:** Download and install [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/), selecting the **"Desktop development with C++"** workload.
-
-Then install node-gyp globally:
-```powershell
-npm install --global node-gyp
-```
-
-## Installation
-
-```powershell
-cd C:\Work\bongcal
-npm install
-```
-
-## Ephemeris files
-
-The Swiss Ephemeris data files are not bundled with the npm package. They must be placed in an `ephe/` directory at the project root.
-
-Create the directory and download the three files that cover 1800–2400:
-
-```powershell
-New-Item -ItemType Directory -Path C:\Work\bongcal\ephe -Force
-
-$base = "https://github.com/aloistr/swisseph/raw/master/ephe/"
-$files = "seas_18.se1", "semo_18.se1", "sepl_18.se1"
-foreach ($f in $files) {
-    Invoke-WebRequest "$base$f" -OutFile "C:\Work\bongcal\ephe\$f"
-}
-```
-
-| File | Contents |
-|---|---|
-| `seas_18.se1` | Main planets 1800–2400 |
-| `semo_18.se1` | Moon 1800–2400 |
-| `sepl_18.se1` | Outer planets 1800–2400 |
+---
 
 ## Usage
 
-```js
-import { calculatePanchanga, generatePanchangaForYear } from 'bongcal';
+### Use case 1 — install from GitHub (no compiler needed)
 
-// Single date
-const result = calculatePanchanga(2026, 6, 15);
-console.log(result['15-06-2026']);
+The pre-generated database ships with the package. No ephemeris files or native build step required at install time.
 
-// Full year (writes/updates master_database.json)
-generatePanchangaForYear(2026);
+```bash
+npm install github:your-username/bongcal
 ```
 
-### Output shape
+```js
+import { findTithiForDate } from 'bongcal';
+
+const entry = findTithiForDate(2026, 6, 15);
+console.log(entry);
+```
+
+**Output:**
 
 ```json
 {
-  "15-06-2026": {
-    "date": "15-06-2026",
-    "tithi": {
-      "name": "অমাবস্যা",
-      "paksha": "কৃষ্ণ পক্ষ",
-      "startTime": { "date": "14-06-2026", "time": "12:19" },
-      "endTime":   { "date": "15-06-2026", "time": "08:23" }
-    },
-    "nakshatra": { "name": "মৃগশিরা" },
-    "bengaliMonth": "আষাঢ়",
-    "bengaliYear": 1433
+  "date": "15-06-2026",
+  "tithi": {
+    "name": "অমাবস্যা",
+    "paksha": "কৃষ্ণ পক্ষ",
+    "startTime": { "date": "14-06-2026", "time": "12:19" },
+    "endTime":   { "date": "15-06-2026", "time": "08:23" }
+  },
+  "nakshatra": { "name": "মৃগশিরা" },
+  "bengaliMonth": "আষাঢ়",
+  "bengaliYear": 1433
+}
+```
+
+On eclipse days the entry also contains an `eclipse` field:
+
+```json
+{
+  "date": "27-07-2018",
+  "tithi": { ... },
+  "nakshatra": { ... },
+  "bengaliMonth": "শ্রাবণ",
+  "bengaliYear": 1425,
+  "eclipse": {
+    "type": "lunar",
+    "subtype": "total",
+    "startTime":   { "date": "27-07-2018", "time": "22:44" },
+    "maximumTime": { "date": "28-07-2018", "time": "01:51" },
+    "endTime":     { "date": "28-07-2018", "time": "04:58" }
   }
 }
 ```
 
-## Running tests
+`eclipse` is absent (not `null`) on non-eclipse days.
 
-```powershell
+All times are **IST (UTC+5:30)**. The eclipse is keyed by its **IST start date** (first contact / penumbral ingress), which may differ from the date of maximum.
+
+---
+
+### Use case 2 — local development (regenerate the database)
+
+Use this when you want to rebuild the database, extend the date range, or modify the calculation engine.
+
+#### Prerequisites
+
+- Node.js 18+
+- A C++ compiler for the native `swisseph` addon:
+  - **Windows:** [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with the **"Desktop development with C++"** workload, then `npm install -g node-gyp`
+  - **Linux/WSL:** `sudo apt install build-essential`
+
+```bash
+git clone https://github.com/your-username/bongcal
+cd bongcal
+npm install          # compiles swisseph + downloads ephemeris files
+npm run regenerate   # rebuilds master_database.json (takes ~10 min)
 npm test
 ```
 
-Tests are verified against [Drik Panchang](https://www.drikpanchang.com/panchang/day-panchang.html) for five dates spanning 2025–2031.
-
-## Configuration
-
-The library is hardcoded for Kolkata coordinates and Lahiri ayanamsha. To change location, edit the top of `src/index.js`:
+To extend or change the date range, edit `scripts/generate-master.js`:
 
 ```js
-swe.swe_set_topo(88.3639, 22.5726, 9); // longitude, latitude, elevation
+const START_YEAR = 1926;
+const END_YEAR   = 2126;
 ```
+
+Then run `npm run regenerate`.
+
+---
+
+## API
+
+### `findTithiForDate(year, month, day)`
+
+| Parameter | Type | Description |
+|---|---|---|
+| `year` | `number` | Gregorian year |
+| `month` | `number` | Month 1–12 |
+| `day` | `number` | Day 1–31 |
+
+Returns the panchanga entry object for that date. Throws `RangeError` if the date is outside the generated range.
+
+---
+
+## Running tests
+
+```bash
+npm test
+```
+
+Panchanga tests are verified against [Drik Panchang](https://www.drikpanchang.com/). Eclipse tests are verified against the [NASA Five Millennium Catalog](https://eclipse.gsfc.nasa.gov/SEcat5/SEcatalog.html).
